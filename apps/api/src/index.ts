@@ -96,6 +96,31 @@ app.get("/connectors/vercel/projects", async (_req, res) => {
   res.json(data);
 });
 
+app.get("/connectors/github/repos", async (_req, res) => {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) return res.status(500).json({ error: "Missing GITHUB_TOKEN" });
+  const resp = await fetch("https://api.github.com/user/repos?per_page=100", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+    },
+  });
+  const data = await resp.json();
+  res.json(data);
+});
+
+app.post("/connectors/github/webhook", async (req, res) => {
+  const payload = req.body;
+  const convo = await ensureConversation();
+  const repo = payload?.repository?.full_name || "repo";
+  const action = payload?.action || "event";
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
+    [convo.id, "System", "agent", `GitHub ${action} on ${repo}`]
+  );
+  res.json({ ok: true });
+});
+
 app.post("/tasks", async (req, res) => {
   const { app_id, agent_id, type, input, priority } = req.body || {};
   const { rows } = await pool.query(
