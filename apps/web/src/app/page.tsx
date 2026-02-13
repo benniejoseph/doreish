@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-const fallbackAgents = [
+type Agent = { name: string; role: string };
+
+const fallbackAgents: Agent[] = [
   { name: "Ironman", role: "CTO / Engineering" },
   { name: "Hulk", role: "QA / Debug" },
   { name: "Black Widow", role: "Support" },
@@ -12,7 +14,7 @@ const fallbackAgents = [
   { name: "Doctor Strange", role: "Automation" },
 ];
 
-async function getAgents() {
+async function getAgents(): Promise<Agent[]> {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) return fallbackAgents;
   try {
