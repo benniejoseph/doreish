@@ -67,93 +67,124 @@ export default async function Home() {
   const chat = await getChat();
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight">Doreish</h1>
-          <Link
-            href="#"
-            className="rounded-full border border-white/20 px-4 py-2 text-sm hover:bg-white/10"
-          >
-            Command Center
-          </Link>
-        </div>
+      <div className="mx-auto flex min-h-screen max-w-7xl">
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-white/10 bg-white/5 p-6">
+          <div className="text-2xl font-semibold">Doreish</div>
+          <div className="mt-6 text-xs uppercase tracking-widest text-white/40">Mission Control</div>
+          <nav className="mt-3 space-y-2 text-sm">
+            <div className="rounded-lg bg-white/10 px-3 py-2">War Room</div>
+            <div className="rounded-lg px-3 py-2 text-white/70">Agents</div>
+            <div className="rounded-lg px-3 py-2 text-white/70">Apps</div>
+            <div className="rounded-lg px-3 py-2 text-white/70">Tasks</div>
+            <div className="rounded-lg px-3 py-2 text-white/70">Runs</div>
+          </nav>
 
-        <section className="mt-12 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-xl font-semibold">Mission Control</h2>
-            <p className="mt-2 text-white/70">
-              Avengers‑themed AI agents running your SaaS ops: dev, support,
-              marketing, sales, retention, and analytics. All under one command
-              center.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-              <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                <div className="text-white/60">Apps</div>
-                <div className="text-2xl font-semibold">2</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                <div className="text-white/60">Agents</div>
-                <div className="text-2xl font-semibold">9</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                <div className="text-white/60">Workflows</div>
-                <div className="text-2xl font-semibold">5</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-                <div className="text-white/60">Budget</div>
-                <div className="text-2xl font-semibold">$100/mo</div>
-              </div>
+          <div className="mt-8 text-xs uppercase tracking-widest text-white/40">Channels</div>
+          <div className="mt-3 space-y-2 text-sm">
+            <div className="rounded-lg bg-white/10 px-3 py-2"># avengers‑war‑room</div>
+            <div className="rounded-lg px-3 py-2 text-white/70"># product‑dev</div>
+            <div className="rounded-lg px-3 py-2 text-white/70"># growth</div>
+            <div className="rounded-lg px-3 py-2 text-white/70"># support</div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <div className="flex-1 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold">{chat.title}</h1>
+              <div className="text-sm text-white/50">Mission Control HQ‑style command center</div>
             </div>
+            <Link
+              href="#"
+              className="rounded-full border border-white/20 px-4 py-2 text-sm hover:bg-white/10"
+            >
+              Command Center
+            </Link>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-purple-900/40 via-black to-black p-6">
-            <h2 className="text-xl font-semibold">Agent Roster</h2>
-            <ul className="mt-4 grid gap-3">
-              {agents.map((agent) => (
-                <li
-                  key={agent.name}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3"
-                >
-                  <span className="font-medium">{agent.name}</span>
-                  <span className="text-sm text-white/60">{agent.role}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="mt-10 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-lg font-semibold">Next Steps</h3>
-            <ol className="mt-3 list-decimal space-y-2 pl-5 text-white/70">
-              <li>Connect GitHub + Vercel + email + support.</li>
-              <li>Define approvals for high‑risk actions.</li>
-              <li>Launch MVP workflows: bugfix, support, campaign, social, retention.</li>
-            </ol>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-lg font-semibold">{chat.title}</h3>
-            <div className="mt-4 max-h-80 space-y-3 overflow-auto text-sm">
-              {chat.messages.length === 0 && (
-                <div className="text-white/60">No messages yet.</div>
-              )}
-              {chat.messages.map((m) => (
-                <div key={m.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
-                  <div className="flex items-center justify-between text-white/60">
-                    <div className="flex items-center gap-2">
-                      <span>{AVATARS[m.sender] || "👤"}</span>
-                      <span>{m.sender}</span>
-                      {m.thread_id && <span className="text-xs text-white/40">thread</span>}
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+            {/* Chat */}
+            <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="max-h-[70vh] space-y-3 overflow-auto text-sm">
+                {chat.messages.length === 0 && (
+                  <div className="text-white/60">No messages yet.</div>
+                )}
+                {chat.messages.map((m) => (
+                  <div key={m.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <div className="flex items-center justify-between text-white/60">
+                      <div className="flex items-center gap-2">
+                        <span>{AVATARS[m.sender] || "👤"}</span>
+                        <span>{m.sender}</span>
+                        {m.thread_id && <span className="text-xs text-white/40">thread</span>}
+                      </div>
+                      <span className="text-xs">{timeAgo(m.created_at)}</span>
                     </div>
-                    <span className="text-xs">{timeAgo(m.created_at)}</span>
+                    <div className="mt-1 text-white/90">{m.content}</div>
+                    <div className="mt-2 text-xs text-white/40">Reply in thread</div>
                   </div>
-                  <div className="mt-1 text-white/90">{m.content}</div>
+                ))}
+              </div>
+            </section>
+
+            {/* Thread drawer */}
+            <aside className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-sm font-semibold">Thread</div>
+              <div className="mt-3 text-xs text-white/60">Select a message to view replies.</div>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                  <div className="text-white/60">System</div>
+                  <div className="mt-1 text-white/90">Threaded replies will appear here.</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            </aside>
           </div>
-        </section>
+
+          <section className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-lg font-semibold">Mission Control</h2>
+              <p className="mt-2 text-white/70">
+                Avengers‑themed AI agents running your SaaS ops: dev, support,
+                marketing, sales, retention, and analytics. All under one command
+                center.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <div className="text-white/60">Apps</div>
+                  <div className="text-2xl font-semibold">2</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <div className="text-white/60">Agents</div>
+                  <div className="text-2xl font-semibold">9</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <div className="text-white/60">Workflows</div>
+                  <div className="text-2xl font-semibold">5</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <div className="text-white/60">Budget</div>
+                  <div className="text-2xl font-semibold">$100/mo</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-purple-900/40 via-black to-black p-6">
+              <h2 className="text-lg font-semibold">Agent Roster</h2>
+              <ul className="mt-4 grid gap-3">
+                {agents.map((agent) => (
+                  <li
+                    key={agent.name}
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3"
+                  >
+                    <span className="font-medium">{agent.name}</span>
+                    <span className="text-sm text-white/60">{agent.role}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
