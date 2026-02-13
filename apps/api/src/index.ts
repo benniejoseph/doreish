@@ -167,6 +167,12 @@ app.post("/connectors/github/webhook", async (req: any, res) => {
   res.json({ ok: true });
 });
 
+async function requireApproval(approval_id?: string) {
+  if (!approval_id) return false;
+  const { rows } = await pool.query("select * from approvals where id = $1", [approval_id]);
+  return rows[0]?.status === "approved";
+}
+
 app.post("/tasks", async (req, res) => {
   const { app_id, agent_id, type, input, priority } = req.body || {};
   const { rows } = await pool.query(
@@ -182,14 +188,14 @@ app.post("/tasks", async (req, res) => {
 });
 
 app.post("/tasks/run", async (req, res) => {
-  const { task_id, summary, require_approval } = req.body || {};
+  const { task_id, summary, require_approval, approval_id } = req.body || {};
   const convo = await ensureConversation();
   const taskRow = task_id
     ? await pool.query("select * from tasks where id = $1", [task_id])
     : null;
   const base = taskRow?.rows?.[0]?.type || "Task";
 
-  if (require_approval) {
+  if (require_approval || (approval_id && !(await requireApproval(approval_id)))) {
     const approval = await pool.query(
       "insert into approvals (task_id, action, requested_by) values ($1,$2,$3) returning *",
       [task_id || null, `Run ${base}`, "Ironman"]
@@ -230,6 +236,61 @@ app.post("/tasks/run", async (req, res) => {
     [convo.id, "Ironman", "agent", summary || `${base} completed. Report in thread.`]
   );
   res.json({ ok: true });
+});
+
+app.post("/execute/github/pr", async (req, res) => {
+  const { approval_id, repo, head, base, title, body } = req.body || {};
+  if (!(await requireApproval(approval_id))) {
+    return res.status(403).json({ error: "Approval required" });
+  }
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) return res.status(500).json({ error: "Missing GITHUB_TOKEN" });
+  const resp = await fetch(`https://api.github.com/repos/${repo}/pulls`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+    },
+    body: JSON.stringify({ title, head, base, body }),
+  });
+  const data = await resp.json();
+  const convo = await ensureConversation();
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
+    [convo.id, "Ironman", "agent", `Created PR on ${repo}: ${data.html_url || title}`]
+  );
+  res.json(data);
+});
+
+app.post("/execute/vercel/deploy", async (req, res) => {
+  const { approval_id, project, gitRepo, gitRef } = req.body || {};
+  if (!(await requireApproval(approval_id))) {
+    return res.status(403).json({ error: "Approval required" });
+  }
+  const token = process.env.VERCEL_TOKEN;
+  if (!token) return res.status(500).json({ error: "Missing VERCEL_TOKEN" });
+  const resp = await fetch("https://api.vercel.com/v13/deployments", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: project,
+      gitSource: {
+        type: "github",
+        repo: gitRepo,
+        ref: gitRef,
+      },
+    }),
+  });
+  const data = await resp.json();
+  const convo = await ensureConversation();
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
+    [convo.id, "Ironman", "agent", `Vercel deploy triggered for ${project}`]
+  );
+  res.json(data);
 });
 
 app.get("/conversations", async (_req, res) => {
