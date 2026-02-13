@@ -182,12 +182,25 @@ app.post("/tasks", async (req, res) => {
 });
 
 app.post("/tasks/run", async (req, res) => {
-  const { task_id, summary } = req.body || {};
+  const { task_id, summary, require_approval } = req.body || {};
   const convo = await ensureConversation();
   const taskRow = task_id
     ? await pool.query("select * from tasks where id = $1", [task_id])
     : null;
   const base = taskRow?.rows?.[0]?.type || "Task";
+
+  if (require_approval) {
+    const approval = await pool.query(
+      "insert into approvals (task_id, action, requested_by) values ($1,$2,$3) returning *",
+      [task_id || null, `Run ${base}`, "Ironman"]
+    );
+    await pool.query(
+      "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
+      [convo.id, "System", "agent", `Approval required: Run ${base}`]
+    );
+    return res.json({ ok: true, approval: approval.rows[0] });
+  }
+
   await pool.query(
     "update tasks set status = 'running', updated_at = now() where id = $1",
     [task_id]
