@@ -188,6 +188,15 @@ app.get("/messages", async (req, res) => {
   res.json({ data: rows, conversation_id: conversationId });
 });
 
+app.get("/events/github", async (_req, res) => {
+  const convo = await ensureConversation();
+  const { rows } = await pool.query(
+    "select * from messages where conversation_id = $1 and sender = 'System' and content like 'GitHub %' order by created_at desc limit 20",
+    [convo.id]
+  );
+  res.json({ data: rows });
+});
+
 app.post("/messages", async (req, res) => {
   const convo = await ensureConversation();
   const { sender, role, content, conversation_id, thread_id } = req.body || {};

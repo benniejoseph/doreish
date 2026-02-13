@@ -31,16 +31,21 @@ import ChatPanel, { ChatMessage } from "@/components/ChatPanel";
 
 async function getChat() {
   const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) return { messages: [], title: "Avengers War Room" };
+  if (!base) return { messages: [], title: "Avengers War Room", events: [] };
   try {
     const convo = await fetch(`${base}/conversations`, { cache: "no-store" }).then((r) => r.json());
     const convoId = convo?.data?.[0]?.id;
     const messages = convoId
       ? await fetch(`${base}/messages?conversation_id=${convoId}`, { cache: "no-store" }).then((r) => r.json())
       : { data: [] };
-    return { messages: (messages.data || []) as ChatMessage[], title: convo?.data?.[0]?.name || "Avengers War Room" };
+    const events = await fetch(`${base}/events/github`, { cache: "no-store" }).then((r) => r.json());
+    return {
+      messages: (messages.data || []) as ChatMessage[],
+      title: convo?.data?.[0]?.name || "Avengers War Room",
+      events: events.data || [],
+    };
   } catch {
-    return { messages: [], title: "Avengers War Room" };
+    return { messages: [], title: "Avengers War Room", events: [] };
   }
 }
 
@@ -133,6 +138,39 @@ export default async function Home() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </section>
+
+          <section className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-lg font-semibold">Webhook UI</h2>
+              <p className="mt-2 text-white/70">Connect GitHub to stream repo events into War Room.</p>
+              <div className="mt-4 rounded-xl border border-white/10 bg-black/40 p-4 text-sm">
+                <div className="text-white/60">GitHub Webhook URL</div>
+                <div className="mt-1 font-mono text-white/90">
+                  {process.env.NEXT_PUBLIC_API_URL}/connectors/github/webhook
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-white/50">
+                Use "application/json" content type.
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-lg font-semibold">Latest Repo Events</h2>
+              <div className="mt-4 space-y-3 text-sm">
+                {chat.events.length === 0 && (
+                  <div className="text-white/60">No repo events yet.</div>
+                )}
+                {chat.events.map((e: any) => (
+                  <div key={e.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <div className="text-white/80">{e.content}</div>
+                    <div className="mt-1 text-xs text-white/50">
+                      {new Date(e.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
         </div>
