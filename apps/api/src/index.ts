@@ -93,6 +93,10 @@ app.post("/tasks/run", async (req, res) => {
     ? await pool.query("select * from tasks where id = $1", [task_id])
     : null;
   const base = taskRow?.rows?.[0]?.type || "Task";
+  await pool.query(
+    "update tasks set status = 'running', updated_at = now() where id = $1",
+    [task_id]
+  );
   const head = await pool.query(
     "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4) returning *",
     [convo.id, "Ironman", "agent", `${base} started. Coordination in progress.`]
@@ -104,6 +108,14 @@ app.post("/tasks/run", async (req, res) => {
   await pool.query(
     "insert into messages (conversation_id, sender, role, content, thread_id) values ($1,$2,$3,$4,$5)",
     [convo.id, "Vision", "agent", "Monitoring metrics and costs.", head.rows[0].id]
+  );
+  await pool.query(
+    "insert into runs (task_id, model, status, logs) values ($1,$2,$3,$4)",
+    [task_id, "openai", "completed", { summary: summary || `${base} completed.` }]
+  );
+  await pool.query(
+    "update tasks set status = 'completed', updated_at = now() where id = $1",
+    [task_id]
   );
   await pool.query(
     "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
