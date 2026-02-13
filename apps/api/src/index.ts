@@ -72,6 +72,30 @@ app.get("/tasks", async (_req, res) => {
   res.json({ data: rows });
 });
 
+app.get("/connectors", async (_req, res) => {
+  const { rows } = await pool.query("select * from connectors order by created_at desc");
+  res.json({ data: rows });
+});
+
+app.post("/connectors", async (req, res) => {
+  const { app_id, provider, config } = req.body || {};
+  const { rows } = await pool.query(
+    "insert into connectors (app_id, provider, config) values ($1,$2,$3) returning *",
+    [app_id || null, provider, config || {}]
+  );
+  res.json({ data: rows[0] });
+});
+
+app.get("/connectors/vercel/projects", async (_req, res) => {
+  const token = process.env.VERCEL_TOKEN;
+  if (!token) return res.status(500).json({ error: "Missing VERCEL_TOKEN" });
+  const resp = await fetch("https://api.vercel.com/v9/projects", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await resp.json();
+  res.json(data);
+});
+
 app.post("/tasks", async (req, res) => {
   const { app_id, agent_id, type, input, priority } = req.body || {};
   const { rows } = await pool.query(
