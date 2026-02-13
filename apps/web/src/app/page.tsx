@@ -31,7 +31,7 @@ import ChatPanel, { ChatMessage } from "@/components/ChatPanel";
 
 async function getChat() {
   const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) return { messages: [], title: "Avengers War Room", events: [] };
+  if (!base) return { messages: [], title: "Avengers War Room", events: [], approvals: [] };
   try {
     const convo = await fetch(`${base}/conversations`, { cache: "no-store" }).then((r) => r.json());
     const convoId = convo?.data?.[0]?.id;
@@ -39,13 +39,15 @@ async function getChat() {
       ? await fetch(`${base}/messages?conversation_id=${convoId}`, { cache: "no-store" }).then((r) => r.json())
       : { data: [] };
     const events = await fetch(`${base}/events/github`, { cache: "no-store" }).then((r) => r.json());
+    const approvals = await fetch(`${base}/approvals`, { cache: "no-store" }).then((r) => r.json());
     return {
       messages: (messages.data || []) as ChatMessage[],
       title: convo?.data?.[0]?.name || "Avengers War Room",
       events: events.data || [],
+      approvals: approvals.data || [],
     };
   } catch {
-    return { messages: [], title: "Avengers War Room", events: [] };
+    return { messages: [], title: "Avengers War Room", events: [], approvals: [] };
   }
 }
 
@@ -151,9 +153,7 @@ export default async function Home() {
                   {process.env.NEXT_PUBLIC_API_URL}/connectors/github/webhook
                 </div>
               </div>
-              <div className="mt-3 text-xs text-white/50">
-                Use "application/json" content type.
-              </div>
+              <div className="mt-3 text-xs text-white/50">Use "application/json" content type.</div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -171,6 +171,21 @@ export default async function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h2 className="text-lg font-semibold">Approvals</h2>
+            <div className="mt-4 space-y-3 text-sm">
+              {chat.approvals.length === 0 && (
+                <div className="text-white/60">No approvals pending.</div>
+              )}
+              {chat.approvals.map((a: any) => (
+                <div key={a.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                  <div className="text-white/80">{a.action}</div>
+                  <div className="mt-1 text-xs text-white/50">Status: {a.status}</div>
+                </div>
+              ))}
             </div>
           </section>
         </div>
