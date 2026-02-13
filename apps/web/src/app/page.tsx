@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const agents = [
+const fallbackAgents = [
   { name: "Ironman", role: "CTO / Engineering" },
   { name: "Hulk", role: "QA / Debug" },
   { name: "Black Widow", role: "Support" },
@@ -12,7 +12,21 @@ const agents = [
   { name: "Doctor Strange", role: "Automation" },
 ];
 
-export default function Home() {
+async function getAgents() {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) return fallbackAgents;
+  try {
+    const res = await fetch(`${base}/agents`, { cache: "no-store" });
+    if (!res.ok) return fallbackAgents;
+    const json = await res.json();
+    return json.data || fallbackAgents;
+  } catch {
+    return fallbackAgents;
+  }
+}
+
+export default async function Home() {
+  const agents = await getAgents();
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-6xl px-6 py-16">
