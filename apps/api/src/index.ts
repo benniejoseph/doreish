@@ -37,6 +37,16 @@ async function ensureAgents() {
   }
 }
 
+async function ensureConversation() {
+  const { rows } = await pool.query("select * from conversations order by created_at asc limit 1");
+  if (rows.length) return rows[0];
+  const created = await pool.query(
+    "insert into conversations (name) values ($1) returning *",
+    ["Avengers War Room"]
+  );
+  return created.rows[0];
+}
+
 app.get("/agents", async (_req, res) => {
   await ensureAgents();
   const { rows } = await pool.query("select * from agents order by name asc");
@@ -67,6 +77,31 @@ app.post("/tasks", async (req, res) => {
   const { rows } = await pool.query(
     "insert into tasks (app_id, agent_id, type, input, priority) values ($1,$2,$3,$4,$5) returning *",
     [app_id || null, agent_id || null, type, input || {}, priority || 3]
+  );
+  res.json({ data: rows[0] });
+});
+
+app.get("/conversations", async (_req, res) => {
+  const convo = await ensureConversation();
+  res.json({ data: [convo] });
+});
+
+app.get("/messages", async (req, res) => {
+  const convo = await ensureConversation();
+  const conversationId = (req.query.conversation_id as string) || convo.id;
+  const { rows } = await pool.query(
+    "select * from messages where conversation_id = $1 order by created_at asc",
+    [conversationId]
+  );
+  res.json({ data: rows, conversation_id: conversationId });
+});
+
+app.post("/messages", async (req, res) => {
+  const convo = await ensureConversation();
+  const { sender, role, content, conversation_id } = req.body || {};
+  const { rows } = await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4) returning *",
+    [conversation_id || convo.id, sender || "System", role || "agent", content]
   );
   res.json({ data: rows[0] });
 });

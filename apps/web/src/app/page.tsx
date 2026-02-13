@@ -27,8 +27,24 @@ async function getAgents(): Promise<Agent[]> {
   }
 }
 
+async function getChat() {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) return { messages: [], title: "Avengers War Room" };
+  try {
+    const convo = await fetch(`${base}/conversations`, { cache: "no-store" }).then((r) => r.json());
+    const convoId = convo?.data?.[0]?.id;
+    const messages = convoId
+      ? await fetch(`${base}/messages?conversation_id=${convoId}`, { cache: "no-store" }).then((r) => r.json())
+      : { data: [] };
+    return { messages: messages.data || [], title: convo?.data?.[0]?.name || "Avengers War Room" };
+  } catch {
+    return { messages: [], title: "Avengers War Room" };
+  }
+}
+
 export default async function Home() {
   const agents = await getAgents();
+  const chat = await getChat();
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-6xl px-6 py-16">
@@ -86,13 +102,30 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Next Steps</h3>
-          <ol className="mt-3 list-decimal space-y-2 pl-5 text-white/70">
-            <li>Connect GitHub, Vercel, Supabase, Upstash.</li>
-            <li>Define approval levels for production actions.</li>
-            <li>Launch MVP workflows: bugfix, support, campaign, social, retention.</li>
-          </ol>
+        <section className="mt-10 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold">Next Steps</h3>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-white/70">
+              <li>Connect GitHub + Vercel + email + support.</li>
+              <li>Define approvals for high‑risk actions.</li>
+              <li>Launch MVP workflows: bugfix, support, campaign, social, retention.</li>
+            </ol>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold">{chat.title}</h3>
+            <div className="mt-4 max-h-80 space-y-3 overflow-auto text-sm">
+              {chat.messages.length === 0 && (
+                <div className="text-white/60">No messages yet.</div>
+              )}
+              {chat.messages.map((m: any) => (
+                <div key={m.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                  <div className="text-white/60">{m.sender}</div>
+                  <div className="mt-1 text-white/90">{m.content}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
       </div>
     </main>
