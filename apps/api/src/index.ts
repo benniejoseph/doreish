@@ -1,13 +1,9 @@
 import "dotenv/config";
 import express from "express";
-import { Pool } from "pg";
+import { pool } from "./db.js";
 
 const app = express();
 app.use(express.json());
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 app.get("/health", async (_req, res) => {
   try {
