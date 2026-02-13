@@ -1,0 +1,16 @@
+{
+  "name": "doreish",
+  "version": "1.0.0",
+  "description": "Autonomous, Avengers‑themed AI agent ops layer for all your SaaS products.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
