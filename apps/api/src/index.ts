@@ -78,7 +78,38 @@ app.post("/tasks", async (req, res) => {
     "insert into tasks (app_id, agent_id, type, input, priority) values ($1,$2,$3,$4,$5) returning *",
     [app_id || null, agent_id || null, type, input || {}, priority || 3]
   );
+  const convo = await ensureConversation();
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
+    [convo.id, "System", "agent", `Task queued: ${type}`]
+  );
   res.json({ data: rows[0] });
+});
+
+app.post("/tasks/run", async (req, res) => {
+  const { task_id, summary } = req.body || {};
+  const convo = await ensureConversation();
+  const taskRow = task_id
+    ? await pool.query("select * from tasks where id = $1", [task_id])
+    : null;
+  const base = taskRow?.rows?.[0]?.type || "Task";
+  const head = await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4) returning *",
+    [convo.id, "Ironman", "agent", `${base} started. Coordination in progress.`]
+  );
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content, thread_id) values ($1,$2,$3,$4,$5)",
+    [convo.id, "Hulk", "agent", "Running tests and reproducing issues.", head.rows[0].id]
+  );
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content, thread_id) values ($1,$2,$3,$4,$5)",
+    [convo.id, "Vision", "agent", "Monitoring metrics and costs.", head.rows[0].id]
+  );
+  await pool.query(
+    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
+    [convo.id, "Ironman", "agent", summary || `${base} completed. Report in thread.`]
+  );
+  res.json({ ok: true });
 });
 
 app.get("/conversations", async (_req, res) => {

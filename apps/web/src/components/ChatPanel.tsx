@@ -38,6 +38,10 @@ export default function ChatPanel({
   apiBase?: string;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const topLevel = useMemo(
+    () => messages.filter((m) => !m.thread_id),
+    [messages]
+  );
   const [selected, setSelected] = useState<ChatMessage | null>(null);
   const [draft, setDraft] = useState("");
 
@@ -87,7 +91,7 @@ export default function ChatPanel({
           {messages.length === 0 && (
             <div className="text-white/60">No messages yet.</div>
           )}
-          {messages.map((m) => (
+          {topLevel.map((m) => (
             <button
               key={m.id}
               onClick={() => setSelected(m)}
