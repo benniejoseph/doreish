@@ -27,25 +27,7 @@ async function getAgents(): Promise<Agent[]> {
   }
 }
 
-type ChatMessage = { id: string; sender: string; content: string; created_at: string; thread_id?: string | null };
-
-const AVATARS: Record<string, string> = {
-  Ironman: "🦾",
-  Hulk: "💚",
-  "Black Widow": "🕷️",
-  "Captain America": "🛡️",
-  Thor: "⚡",
-  Hawkeye: "🎯",
-  Vision: "🔮",
-  "Spider‑Man": "🕸️",
-  "Doctor Strange": "🌀",
-  System: "🧠",
-};
-
-function timeAgo(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
+import ChatPanel, { ChatMessage } from "@/components/ChatPanel";
 
 async function getChat() {
   const base = process.env.NEXT_PUBLIC_API_URL;
@@ -104,42 +86,11 @@ export default async function Home() {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-            {/* Chat */}
-            <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="max-h-[70vh] space-y-3 overflow-auto text-sm">
-                {chat.messages.length === 0 && (
-                  <div className="text-white/60">No messages yet.</div>
-                )}
-                {chat.messages.map((m) => (
-                  <div key={m.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
-                    <div className="flex items-center justify-between text-white/60">
-                      <div className="flex items-center gap-2">
-                        <span>{AVATARS[m.sender] || "👤"}</span>
-                        <span>{m.sender}</span>
-                        {m.thread_id && <span className="text-xs text-white/40">thread</span>}
-                      </div>
-                      <span className="text-xs">{timeAgo(m.created_at)}</span>
-                    </div>
-                    <div className="mt-1 text-white/90">{m.content}</div>
-                    <div className="mt-2 text-xs text-white/40">Reply in thread</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Thread drawer */}
-            <aside className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-sm font-semibold">Thread</div>
-              <div className="mt-3 text-xs text-white/60">Select a message to view replies.</div>
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
-                  <div className="text-white/60">System</div>
-                  <div className="mt-1 text-white/90">Threaded replies will appear here.</div>
-                </div>
-              </div>
-            </aside>
-          </div>
+          <ChatPanel
+            title={chat.title}
+            initialMessages={chat.messages as ChatMessage[]}
+            apiBase={process.env.NEXT_PUBLIC_API_URL}
+          />
 
           <section className="mt-6 grid gap-6 lg:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
