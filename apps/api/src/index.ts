@@ -98,10 +98,10 @@ app.get("/messages", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
   const convo = await ensureConversation();
-  const { sender, role, content, conversation_id } = req.body || {};
+  const { sender, role, content, conversation_id, thread_id } = req.body || {};
   const { rows } = await pool.query(
-    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4) returning *",
-    [conversation_id || convo.id, sender || "System", role || "agent", content]
+    "insert into messages (conversation_id, sender, role, content, thread_id) values ($1,$2,$3,$4,$5) returning *",
+    [conversation_id || convo.id, sender || "System", role || "agent", content, thread_id || null]
   );
   res.json({ data: rows[0] });
 });

@@ -27,6 +27,26 @@ async function getAgents(): Promise<Agent[]> {
   }
 }
 
+type ChatMessage = { id: string; sender: string; content: string; created_at: string; thread_id?: string | null };
+
+const AVATARS: Record<string, string> = {
+  Ironman: "🦾",
+  Hulk: "💚",
+  "Black Widow": "🕷️",
+  "Captain America": "🛡️",
+  Thor: "⚡",
+  Hawkeye: "🎯",
+  Vision: "🔮",
+  "Spider‑Man": "🕸️",
+  "Doctor Strange": "🌀",
+  System: "🧠",
+};
+
+function timeAgo(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 async function getChat() {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) return { messages: [], title: "Avengers War Room" };
@@ -36,7 +56,7 @@ async function getChat() {
     const messages = convoId
       ? await fetch(`${base}/messages?conversation_id=${convoId}`, { cache: "no-store" }).then((r) => r.json())
       : { data: [] };
-    return { messages: messages.data || [], title: convo?.data?.[0]?.name || "Avengers War Room" };
+    return { messages: (messages.data || []) as ChatMessage[], title: convo?.data?.[0]?.name || "Avengers War Room" };
   } catch {
     return { messages: [], title: "Avengers War Room" };
   }
@@ -118,9 +138,16 @@ export default async function Home() {
               {chat.messages.length === 0 && (
                 <div className="text-white/60">No messages yet.</div>
               )}
-              {chat.messages.map((m: any) => (
+              {chat.messages.map((m) => (
                 <div key={m.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
-                  <div className="text-white/60">{m.sender}</div>
+                  <div className="flex items-center justify-between text-white/60">
+                    <div className="flex items-center gap-2">
+                      <span>{AVATARS[m.sender] || "👤"}</span>
+                      <span>{m.sender}</span>
+                      {m.thread_id && <span className="text-xs text-white/40">thread</span>}
+                    </div>
+                    <span className="text-xs">{timeAgo(m.created_at)}</span>
+                  </div>
                   <div className="mt-1 text-white/90">{m.content}</div>
                 </div>
               ))}
