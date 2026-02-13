@@ -77,6 +77,29 @@ app.get("/tasks", async (_req, res) => {
   res.json({ data: rows });
 });
 
+app.get("/approvals", async (_req, res) => {
+  const { rows } = await pool.query("select * from approvals order by created_at desc");
+  res.json({ data: rows });
+});
+
+app.post("/approvals", async (req, res) => {
+  const { task_id, action, requested_by } = req.body || {};
+  const { rows } = await pool.query(
+    "insert into approvals (task_id, action, requested_by) values ($1,$2,$3) returning *",
+    [task_id || null, action, requested_by || "System"]
+  );
+  res.json({ data: rows[0] });
+});
+
+app.post("/approvals/:id/decide", async (req, res) => {
+  const { status, approved_by } = req.body || {};
+  const { rows } = await pool.query(
+    "update approvals set status=$1, approved_by=$2, decided_at=now() where id=$3 returning *",
+    [status, approved_by || "Human", req.params.id]
+  );
+  res.json({ data: rows[0] });
+});
+
 app.get("/connectors", async (_req, res) => {
   const { rows } = await pool.query("select * from connectors order by created_at desc");
   res.json({ data: rows });
