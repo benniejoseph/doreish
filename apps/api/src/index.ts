@@ -1,9 +1,14 @@
 import "dotenv/config";
 import express from "express";
+import crypto from "crypto";
 import { pool } from "./db.js";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 
 app.get("/health", async (_req, res) => {
   try {
@@ -109,14 +114,32 @@ app.get("/connectors/github/repos", async (_req, res) => {
   res.json(data);
 });
 
-app.post("/connectors/github/webhook", async (req, res) => {
+app.post("/connectors/github/webhook", async (req: any, res) => {
+  const secret = process.env.GITHUB_WEBHOOK_SECRET || "";
+  const sig = req.headers["x-hub-signature-256"] as string | undefined;
+  const raw = req.rawBody || Buffer.from("");
+  const expected = `sha256=${crypto.createHmac("sha256", secret).update(raw).digest("hex")}`;
+  if (!sig || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
   const payload = req.body;
   const convo = await ensureConversation();
   const repo = payload?.repository?.full_name || "repo";
   const action = payload?.action || "event";
+
+  let detail = "";
+  if (payload?.pull_request) {
+    detail = `PR #${payload.pull_request.number}: ${payload.pull_request.title}`;
+  } else if (payload?.issue) {
+    detail = `Issue #${payload.issue.number}: ${payload.issue.title}`;
+  } else if (payload?.commits?.length) {
+    detail = `Commits: ${payload.commits[0]?.message}`;
+  }
+
   await pool.query(
-    "insert into messages (conversation_id, sender, role, content) values ($1,$2,$3,$4)",
-    [convo.id, "System", "agent", `GitHub ${action} on ${repo}`]
+    "insert into messages (conversation_id, sender, role, content, logs) values ($1,$2,$3,$4,$5)",
+    [convo.id, "System", "agent", `GitHub ${action} on ${repo} ${detail}`.trim(), payload]
   );
   res.json({ ok: true });
 });
