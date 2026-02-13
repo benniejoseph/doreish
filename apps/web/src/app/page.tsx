@@ -184,6 +184,38 @@ export default async function Home() {
                 <div key={a.id} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
                   <div className="text-white/80">{a.action}</div>
                   <div className="mt-1 text-xs text-white/50">Status: {a.status}</div>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={async () => {
+                        const base = process.env.NEXT_PUBLIC_API_URL;
+                        if (!base) return;
+                        await fetch(`${base}/approvals/${a.id}/decide`, {
+                          method: "POST",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ status: "approved", approved_by: "Ben" }),
+                        });
+                        location.reload();
+                      }}
+                      className="rounded-lg border border-white/20 px-3 py-1 text-xs hover:bg-white/10"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const base = process.env.NEXT_PUBLIC_API_URL;
+                        if (!base) return;
+                        await fetch(`${base}/approvals/${a.id}/decide`, {
+                          method: "POST",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ status: "rejected", approved_by: "Ben" }),
+                        });
+                        location.reload();
+                      }}
+                      className="rounded-lg border border-white/20 px-3 py-1 text-xs hover:bg-white/10"
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
